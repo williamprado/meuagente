@@ -111,6 +111,12 @@ class TokenStore:
         payload = json.loads(self.path.read_text(encoding="utf-8"))
         return self._normalize(payload)
 
+    def _single_saved_provider(self, payload: dict) -> str | None:
+        configured = [provider for provider in ("openai", "gemini") if payload[provider]["api_key"]]
+        if len(configured) == 1:
+            return configured[0]
+        return None
+
     def resolve(
         self,
         *,
@@ -135,6 +141,14 @@ class TokenStore:
         token = client_tokens[active_provider] or payload[active_provider]["api_key"]
         model = client_models[active_provider] or payload[active_provider]["model"]
         source = "client" if client_tokens[active_provider] else "server"
+
+        if not token:
+            fallback_provider = self._single_saved_provider(payload)
+            if fallback_provider and fallback_provider != active_provider:
+                token = payload[fallback_provider]["api_key"]
+                model = client_models[fallback_provider] or payload[fallback_provider]["model"]
+                active_provider = fallback_provider
+                source = "server"
 
         if token:
             return TokenResolution(

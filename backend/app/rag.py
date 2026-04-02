@@ -76,7 +76,6 @@ class RagService:
             model=self._model(provider=provider, api_key=api_key, model_id=model_id),
             knowledge=self._knowledge(api_key=api_key, provider=provider),
             search_knowledge=use_rag,
-            add_knowledge_to_context=use_rag,
             markdown=True,
             instructions=[
                 "Responda em portugues do Brasil.",

@@ -86,6 +86,10 @@ function init() {
   elements.providerToggles.forEach((button) => {
     button.addEventListener("click", () => setActiveProvider(button.dataset.provider));
   });
+  elements.tokenInput.addEventListener("input", () => activateProviderFromField("openai"));
+  elements.openaiModel.addEventListener("change", () => activateProviderFromField("openai"));
+  elements.geminiTokenInput.addEventListener("input", () => activateProviderFromField("gemini"));
+  elements.geminiModel.addEventListener("change", () => activateProviderFromField("gemini"));
 
   restorePhoneDraft();
   applyTheme(loadTheme());
@@ -163,6 +167,12 @@ function setActiveProvider(provider) {
   renderProviderSummary();
 }
 
+function activateProviderFromField(provider) {
+  if (state.activeProvider !== provider) {
+    setActiveProvider(provider);
+  }
+}
+
 function currentRuntimePayload() {
   return {
     provider: state.activeProvider,
@@ -203,9 +213,13 @@ function renderProviderSummary() {
 
   const configuredCount = [summary.openai.configured, summary.gemini.configured].filter(Boolean).length;
   const activeConfigured = summary[state.activeProvider]?.configured;
+  const alternateProvider = state.activeProvider === "openai" ? "gemini" : "openai";
+  const alternateConfigured = summary[alternateProvider]?.configured;
   elements.tokenSource.textContent = activeConfigured
     ? `${activeLabel} ativo · ${configuredCount} provedor(es) salvo(s)`
-    : `${activeLabel} ativo · aguardando chave`;
+    : alternateConfigured
+      ? `${activeLabel} ativo sem chave · ${providerLabel(alternateProvider)} já configurado`
+      : `${activeLabel} ativo · aguardando chave`;
 
   const openaiState = formatProviderState(summary.openai, "openai");
   const geminiState = formatProviderState(summary.gemini, "gemini");
@@ -505,6 +519,7 @@ async function refreshHealth() {
 
 async function saveToken() {
   const payload = currentRuntimePayload();
+  const providerToSave = inferProviderForSave(payload);
   const hasNewKey = Boolean(payload.openai_api_key || payload.gemini_api_key);
   const hasSavedKey = Boolean(state.summary?.openai?.configured || state.summary?.gemini?.configured);
 
@@ -516,7 +531,7 @@ async function saveToken() {
   await request(`${apiBase}/config/token`, {
     method: "POST",
     body: JSON.stringify({
-      active_provider: state.activeProvider,
+      active_provider: providerToSave,
       openai_api_key: payload.openai_api_key,
       openai_model: payload.openai_model,
       gemini_api_key: payload.gemini_api_key,
@@ -524,9 +539,32 @@ async function saveToken() {
     }),
   });
 
+  setActiveProvider(providerToSave);
   clearSecretInputs();
   await refreshSummary();
-  showToast(`Configuração salva no backend. ${providerLabel(state.activeProvider)} está ativo.`);
+  showToast(`Configuração salva no backend. ${providerLabel(providerToSave)} está ativo.`);
+}
+
+function inferProviderForSave(payload) {
+  const providersWithTypedKeys = [
+    payload.openai_api_key ? "openai" : null,
+    payload.gemini_api_key ? "gemini" : null,
+  ].filter(Boolean);
+
+  if (providersWithTypedKeys.length === 1) {
+    return providersWithTypedKeys[0];
+  }
+
+  if (providersWithTypedKeys.length === 0) {
+    if (state.summary?.openai?.configured && !state.summary?.gemini?.configured) {
+      return "openai";
+    }
+    if (state.summary?.gemini?.configured && !state.summary?.openai?.configured) {
+      return "gemini";
+    }
+  }
+
+  return state.activeProvider;
 }
 
 async function ingestContent() {

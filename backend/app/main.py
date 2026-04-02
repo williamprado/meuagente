@@ -76,12 +76,13 @@ async def health() -> HealthResponse:
 async def get_summary() -> SettingsSummaryResponse:
     config = token_store.load_config()
     active_provider = config["active_provider"]
+    has_any_server_token = any(bool(config[provider]["api_key"]) for provider in ("openai", "gemini"))
     embedder_model = (
         settings.embedder_model if active_provider == "openai" else settings.gemini_embedder_model
     )
     return SettingsSummaryResponse(
         active_provider=active_provider,
-        has_server_token=bool(token_store.load()),
+        has_server_token=has_any_server_token,
         llm_model=config[active_provider]["model"],
         embedder_model=embedder_model,
         openai={
