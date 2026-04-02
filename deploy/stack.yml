@@ -1,0 +1,108 @@
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE:-meuagente-frontend:latest}
+    networks:
+      - waianet
+      - internal
+    deploy:
+      mode: replicated
+      replicas: ${FRONTEND_REPLICAS:-1}
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.meuagente.rule=Host(`${APP_DOMAIN}`)
+        - traefik.http.routers.meuagente.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+        - traefik.http.routers.meuagente.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencryptresolver}
+        - traefik.http.routers.meuagente.service=meuagente
+        - traefik.http.services.meuagente.loadbalancer.server.port=80
+        - traefik.http.services.meuagente.loadbalancer.passHostHeader=true
+        - traefik.docker.network=${TRAEFIK_DOCKER_NETWORK:-waianet}
+
+  backend:
+    image: ${BACKEND_IMAGE:-meuagente-backend:latest}
+    networks:
+      - internal
+    environment:
+      - MEUAGENTE_POSTGRES_HOST=${POSTGRES_HOST:-vector-db}
+      - MEUAGENTE_POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - MEUAGENTE_POSTGRES_USER=${POSTGRES_USER:-meuagente}
+      - MEUAGENTE_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MEUAGENTE_POSTGRES_DB=${POSTGRES_DB:-meuagente}
+      - MEUAGENTE_CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - MEUAGENTE_LLM_MODEL=${MEUAGENTE_LLM_MODEL:-gpt-4.1-mini}
+      - MEUAGENTE_EMBEDDER_MODEL=${MEUAGENTE_EMBEDDER_MODEL:-text-embedding-3-small}
+      - MEUAGENTE_WHATSAPP_VERIFY_TOKEN=${MEUAGENTE_WHATSAPP_VERIFY_TOKEN:-change-me}
+    volumes:
+      - backend_data:/data
+    deploy:
+      mode: replicated
+      replicas: ${BACKEND_REPLICAS:-1}
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  whatsapp:
+    image: ${WHATSAPP_IMAGE:-meuagente-whatsapp:latest}
+    networks:
+      - internal
+    environment:
+      - WHATSAPP_BACKEND_URL=http://backend:8000/api
+      - WHATSAPP_SQLITE_DSN=file:/data/whatsapp.db?_foreign_keys=on
+      - WHATSAPP_LISTEN_ADDR=:8081
+    volumes:
+      - whatsapp_data:/data
+    deploy:
+      mode: replicated
+      replicas: ${WHATSAPP_REPLICAS:-1}
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  vector-db:
+    image: ${VECTOR_DB_IMAGE:-pgvector/pgvector:pg17}
+    networks:
+      - internal
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-meuagente}
+      - POSTGRES_USER=${POSTGRES_USER:-meuagente}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - vector_db_data:/var/lib/postgresql/data
+    configs:
+      - source: pgvector_init
+        target: /docker-entrypoint-initdb.d/init-pgvector.sql
+    deploy:
+      mode: replicated
+      replicas: ${VECTOR_DB_REPLICAS:-1}
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+volumes:
+  backend_data:
+    name: ${BACKEND_VOLUME_NAME:-meuagente_backend_data}
+  whatsapp_data:
+    name: ${WHATSAPP_VOLUME_NAME:-meuagente_whatsapp_data}
+  vector_db_data:
+    name: ${VECTOR_VOLUME_NAME:-meuagente_vector_db_data}
+
+configs:
+  pgvector_init:
+    file: ./init-pgvector.sql
+
+networks:
+  waianet:
+    external: true
+    name: ${TRAEFIK_DOCKER_NETWORK:-waianet}
+  internal:
+    driver: overlay

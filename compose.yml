@@ -1,0 +1,72 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    image: ${FRONTEND_IMAGE:-meuagente-frontend:latest}
+    depends_on:
+      - backend
+      - whatsapp
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./backend
+    image: ${BACKEND_IMAGE:-meuagente-backend:latest}
+    environment:
+      MEUAGENTE_POSTGRES_HOST: ${POSTGRES_HOST:-vector-db}
+      MEUAGENTE_POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      MEUAGENTE_POSTGRES_USER: ${POSTGRES_USER:-meuagente}
+      MEUAGENTE_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MEUAGENTE_POSTGRES_DB: ${POSTGRES_DB:-meuagente}
+      MEUAGENTE_CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      MEUAGENTE_LLM_MODEL: ${MEUAGENTE_LLM_MODEL:-gpt-4.1-mini}
+      MEUAGENTE_EMBEDDER_MODEL: ${MEUAGENTE_EMBEDDER_MODEL:-text-embedding-3-small}
+      MEUAGENTE_WHATSAPP_VERIFY_TOKEN: ${MEUAGENTE_WHATSAPP_VERIFY_TOKEN:-change-me}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - backend_data:/data
+    depends_on:
+      - vector-db
+    networks:
+      - internal
+
+  whatsapp:
+    build:
+      context: ./whatsapp
+    image: ${WHATSAPP_IMAGE:-meuagente-whatsapp:latest}
+    environment:
+      WHATSAPP_BACKEND_URL: http://backend:8000/api
+      WHATSAPP_SQLITE_DSN: file:/data/whatsapp.db?_foreign_keys=on
+      WHATSAPP_LISTEN_ADDR: :8081
+    ports:
+      - "${WHATSAPP_PORT:-8081}:8081"
+    volumes:
+      - whatsapp_data:/data
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+  vector-db:
+    image: ${VECTOR_DB_IMAGE:-pgvector/pgvector:pg17}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-meuagente}
+      POSTGRES_USER: ${POSTGRES_USER:-meuagente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - vector_db_data:/var/lib/postgresql/data
+      - ./deploy/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql:ro
+    networks:
+      - internal
+
+volumes:
+  backend_data:
+  whatsapp_data:
+  vector_db_data:
+
+networks:
+  internal:
