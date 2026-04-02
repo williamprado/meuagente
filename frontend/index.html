@@ -13,24 +13,49 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <div class="app-backdrop">
+      <div class="app-grid"></div>
+      <div class="app-glow app-glow-left"></div>
+      <div class="app-glow app-glow-right"></div>
+    </div>
+
     <div class="page-shell">
-      <header class="hero">
+      <header class="hero card-shell">
         <div class="hero-copy">
-          <span class="eyebrow">Agente com RAG + WhatsApp</span>
+          <span class="eyebrow">Agent Control Center</span>
           <h1>Meu Agente</h1>
           <p>
-            Organize o token, treine a base vetorial, conecte o WhatsApp por QR Code
-            e valide tudo em uma conversa com o agente.
+            Central premium para configurar seu agente, treinar a base vetorial,
+            conectar o WhatsApp e validar respostas em um fluxo claro e elegante.
           </p>
         </div>
-        <div class="hero-badge">
-          <span id="backend-health-dot" class="status-dot"></span>
-          <strong id="backend-health-text">Verificando aplicação</strong>
+
+        <div class="hero-side">
+          <div class="hero-badge">
+            <span id="backend-health-dot" class="status-dot"></span>
+            <div>
+              <span class="hero-badge-label">Saúde da aplicação</span>
+              <strong id="backend-health-text">Verificando aplicação</strong>
+            </div>
+          </div>
+
+          <div class="hero-summary">
+            <div class="summary-chip">
+              <span class="summary-label">Tema</span>
+              <strong>Dark Blue Premium</strong>
+            </div>
+            <div class="summary-chip">
+              <span class="summary-label">Fluxo</span>
+              <strong>4 passos guiados</strong>
+            </div>
+          </div>
         </div>
       </header>
 
-      <section class="card whatsapp-hero-card">
+      <section class="card whatsapp-hero-card card-shell">
         <div class="card-gradient"></div>
+        <div class="card-noise"></div>
+
         <div class="whatsapp-hero-head">
           <div class="whatsapp-title-group">
             <div class="whatsapp-icon" aria-hidden="true">
@@ -41,14 +66,17 @@
                 />
               </svg>
             </div>
-            <div>
+
+            <div class="section-copy">
               <span class="section-kicker">Passo 3 · Conectar</span>
               <h2>Conectar número ao WhatsApp</h2>
               <p>
-                Conecte um número para ativar o agente e enviar mensagens via QR Code.
+                Ative o canal do agente com uma experiência guiada, QR amplo e
+                status operacionais legíveis para suporte e operação.
               </p>
             </div>
           </div>
+
           <div class="step-indicator" aria-label="Fluxo do agente">
             <span class="step-chip">Passo 1 Token</span>
             <span class="step-chip">Passo 2 Treino</span>
@@ -58,7 +86,14 @@
         </div>
 
         <div class="whatsapp-hero-body">
-          <div class="whatsapp-actions-panel">
+          <div class="whatsapp-actions-panel subcard">
+            <div class="subcard-head">
+              <div>
+                <span class="mini-kicker">Configuração do canal</span>
+                <h3>Ações de conexão</h3>
+              </div>
+            </div>
+
             <label class="field">
               <span>Número do WhatsApp</span>
               <input
@@ -95,10 +130,16 @@
             </div>
           </div>
 
-          <div class="whatsapp-qr-panel">
+          <div class="whatsapp-qr-panel subcard">
             <div class="qr-panel-head">
-              <span id="whatsapp-status-badge" class="status-badge status-offline">Offline</span>
-              <button id="copy-whatsapp-status" class="ghost small-button">Copiar status</button>
+              <div>
+                <span class="mini-kicker">Escaneamento</span>
+                <h3>QR Code e feedback</h3>
+              </div>
+              <div class="qr-actions">
+                <span id="whatsapp-status-badge" class="status-badge status-offline">Offline</span>
+                <button id="copy-whatsapp-status" class="ghost small-button">Copiar status</button>
+              </div>
             </div>
 
             <div class="qr-box qr-box-large">
@@ -120,14 +161,14 @@
       </section>
 
       <main class="grid objective-grid">
-        <section class="card">
+        <section class="card card-shell">
           <div class="card-head">
-            <div>
+            <div class="section-copy">
               <span class="section-kicker">Passo 1 · Configurar</span>
               <h2>Configurar</h2>
               <p class="card-copy">
-                Salve o token OpenAI para que chat, ingestão e WhatsApp possam operar
-                com fallback no servidor.
+                Centralize a credencial do modelo para manter o agente pronto para
+                treino, conversa e WhatsApp com fallback no servidor.
               </p>
             </div>
             <span id="token-source" class="pill">Sem token salvo</span>
@@ -143,13 +184,14 @@
           </p>
         </section>
 
-        <section class="card">
+        <section class="card card-shell">
           <div class="card-head">
-            <div>
+            <div class="section-copy">
               <span class="section-kicker">Passo 2 · Treinar</span>
               <h2>Treinar</h2>
               <p class="card-copy">
-                Faça a ingestão da base em texto para abastecer o RAG persistente.
+                Alimente a base vetorial com conhecimento operacional usando uma área
+                de ingestão clara e parametrização avançada.
               </p>
             </div>
             <span class="pill">PgVector persistente</span>
@@ -187,13 +229,14 @@
           <button id="ingest-content" class="primary">Ingerir conteúdo</button>
         </section>
 
-        <section class="card card-chat">
+        <section class="card card-chat card-shell">
           <div class="card-head">
-            <div>
+            <div class="section-copy">
               <span class="section-kicker">Passo 4 · Testar</span>
               <h2>Conversa com o agente</h2>
               <p class="card-copy">
-                Valide o comportamento do agente e veja o histórico em formato de chat.
+                Simule perguntas reais, acompanhe o histórico em bolhas e teste a
+                experiência final com contraste e hierarquia fortes.
               </p>
             </div>
             <span class="pill">RAG ativo</span>
@@ -201,7 +244,7 @@
 
           <div id="chat-window" class="chat-window" aria-live="polite"></div>
 
-          <div class="chat-composer">
+          <div class="chat-composer subcard">
             <label class="field field-grow">
               <span>Mensagem</span>
               <textarea

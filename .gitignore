@@ -27,6 +27,7 @@ logs/
 *.sqlite
 *.sqlite3
 *.db
+limitação.PNG
 
 .docker/
 .docker-config/
