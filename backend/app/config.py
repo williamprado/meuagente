@@ -19,8 +19,11 @@ class Settings(BaseSettings):
     postgres_host: str = "vector-db"
     postgres_port: int = 5432
     vector_table: str = "knowledge_base"
+    default_provider: str = "openai"
     embedder_model: str = "text-embedding-3-small"
     llm_model: str = "gpt-4.1-mini"
+    gemini_embedder_model: str = "gemini-embedding-exp-03-07"
+    gemini_llm_model: str = "gemini-2.0-flash"
     rag_search_type: str = "hybrid"
     knowledge_max_results: int = 4
     default_chunk_size: int = 1200

@@ -21,7 +21,12 @@ from app.schemas import (
 from app.token_store import TokenStore
 
 settings = get_settings()
-token_store = TokenStore(settings.settings_file)
+token_store = TokenStore(
+    settings.settings_file,
+    default_provider=settings.default_provider,
+    openai_model=settings.llm_model,
+    gemini_model=settings.gemini_llm_model,
+)
 rag_service = RagService(settings)
 
 app = FastAPI(title=settings.app_name)
@@ -32,6 +37,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def mask_key(value: str | None) -> str | None:
+    if not value:
+        return None
+    if len(value) <= 8:
+        return "*" * len(value)
+    return f"{value[:4]}...{value[-4:]}"
 
 
 @app.get(f"{settings.api_prefix}/health", response_model=HealthResponse)
@@ -61,25 +74,54 @@ async def health() -> HealthResponse:
 
 @app.get(f"{settings.api_prefix}/settings", response_model=SettingsSummaryResponse)
 async def get_summary() -> SettingsSummaryResponse:
+    config = token_store.load_config()
+    active_provider = config["active_provider"]
+    embedder_model = (
+        settings.embedder_model if active_provider == "openai" else settings.gemini_embedder_model
+    )
     return SettingsSummaryResponse(
-        has_server_token=token_store.load() is not None,
-        llm_model=settings.llm_model,
-        embedder_model=settings.embedder_model,
+        active_provider=active_provider,
+        has_server_token=bool(token_store.load()),
+        llm_model=config[active_provider]["model"],
+        embedder_model=embedder_model,
+        openai={
+            "configured": bool(config["openai"]["api_key"]),
+            "model": config["openai"]["model"],
+            "masked_key": mask_key(config["openai"]["api_key"]),
+        },
+        gemini={
+            "configured": bool(config["gemini"]["api_key"]),
+            "model": config["gemini"]["model"],
+            "masked_key": mask_key(config["gemini"]["api_key"]),
+        },
     )
 
 
 @app.post(f"{settings.api_prefix}/config/token", response_model=TokenConfigResponse)
 async def save_token(request: TokenConfigRequest) -> TokenConfigResponse:
-    token_store.save(request.openai_api_key)
-    return TokenConfigResponse(saved=True, source="server")
+    token_store.save(
+        active_provider=request.active_provider,
+        openai_api_key=request.openai_api_key,
+        openai_model=request.openai_model,
+        gemini_api_key=request.gemini_api_key,
+        gemini_model=request.gemini_model,
+    )
+    return TokenConfigResponse(saved=True, source="server", active_provider=request.active_provider)
 
 
 @app.post(f"{settings.api_prefix}/ingest", response_model=IngestResponse)
 async def ingest(request: IngestRequest) -> IngestResponse:
     try:
-        resolved = token_store.resolve(request.openai_api_key)
+        resolved = token_store.resolve(
+            provider=request.provider,
+            openai_api_key=request.openai_api_key,
+            openai_model=request.openai_model,
+            gemini_api_key=request.gemini_api_key,
+            gemini_model=request.gemini_model,
+        )
         stored_path = rag_service.ingest_text(
             resolved.token,
+            provider=resolved.provider,
             content=request.content,
             name=request.name,
             chunk_strategy=request.chunk_strategy,
@@ -101,9 +143,17 @@ async def ingest(request: IngestRequest) -> IngestResponse:
 async def chat(request: ChatRequest) -> ChatResponse:
     conversation_id = request.conversation_id or str(uuid4())
     try:
-        resolved = token_store.resolve(request.openai_api_key)
+        resolved = token_store.resolve(
+            provider=request.provider,
+            openai_api_key=request.openai_api_key,
+            openai_model=request.openai_model,
+            gemini_api_key=request.gemini_api_key,
+            gemini_model=request.gemini_model,
+        )
         answer = rag_service.ask(
             resolved.token,
+            provider=resolved.provider,
+            model_id=resolved.model,
             message=request.message,
             conversation_id=conversation_id,
             use_rag=request.use_rag,
@@ -123,9 +173,17 @@ async def chat(request: ChatRequest) -> ChatResponse:
 async def whatsapp_inbound(request: WhatsAppInboundRequest) -> dict[str, str]:
     conversation_id = request.conversation_id or request.sender
     try:
-        resolved = token_store.resolve(None)
+        resolved = token_store.resolve(
+            provider=None,
+            openai_api_key=None,
+            openai_model=None,
+            gemini_api_key=None,
+            gemini_model=None,
+        )
         answer = rag_service.ask(
             resolved.token,
+            provider=resolved.provider,
+            model_id=resolved.model,
             message=request.message,
             conversation_id=conversation_id,
             use_rag=True,
@@ -133,5 +191,8 @@ async def whatsapp_inbound(request: WhatsAppInboundRequest) -> dict[str, str]:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Falha no processamento do WhatsApp: {exc}") from exc
+        raise HTTPException(
+            status_code=500,
+            detail=f"Falha no processamento do WhatsApp: {exc}",
+        ) from exc
     return {"reply": answer, "conversation_id": conversation_id}

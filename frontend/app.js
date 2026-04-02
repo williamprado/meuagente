@@ -2,12 +2,16 @@ const apiBase = "/api";
 const waBase = "/whatsapp-api";
 const QR_TTL_MS = 60 * 1000;
 const PHONE_STORAGE_KEY = "meuagente.whatsapp.phone";
+const THEME_STORAGE_KEY = "meuagente.theme";
 
 let conversationId = crypto.randomUUID();
 let toastTimer = null;
 
 const state = {
+  activeProvider: "openai",
   chatPending: false,
+  summary: null,
+  theme: "dark",
   whatsapp: {
     status: null,
     qr: null,
@@ -19,6 +23,14 @@ const state = {
 const elements = {
   tokenInput: document.getElementById("openai-token"),
   tokenSource: document.getElementById("token-source"),
+  openaiModel: document.getElementById("openai-model"),
+  openaiProviderState: document.getElementById("openai-provider-state"),
+  openaiProviderHint: document.getElementById("openai-provider-hint"),
+  geminiTokenInput: document.getElementById("gemini-token"),
+  geminiModel: document.getElementById("gemini-model"),
+  geminiProviderState: document.getElementById("gemini-provider-state"),
+  geminiProviderHint: document.getElementById("gemini-provider-hint"),
+  providerToggles: Array.from(document.querySelectorAll(".provider-toggle")),
   contentName: document.getElementById("content-name"),
   trainingContent: document.getElementById("training-content"),
   chunkStrategy: document.getElementById("chunk-strategy"),
@@ -27,6 +39,8 @@ const elements = {
   chatWindow: document.getElementById("chat-window"),
   chatMessage: document.getElementById("chat-message"),
   sendChat: document.getElementById("send-chat"),
+  themeToggle: document.getElementById("theme-toggle"),
+  themeSummary: document.getElementById("theme-summary"),
   backendHealthDot: document.getElementById("backend-health-dot"),
   backendHealthText: document.getElementById("backend-health-text"),
   whatsappPhoneInput: document.getElementById("whatsapp-phone-input"),
@@ -46,40 +60,47 @@ const elements = {
   toast: document.getElementById("toast"),
 };
 
-document.getElementById("save-token").addEventListener("click", () => {
-  saveToken().catch((error) => showToast(error.message, true));
-});
-document.getElementById("ingest-content").addEventListener("click", () => {
-  ingestContent().catch((error) => showToast(error.message, true));
-});
-elements.sendChat.addEventListener("click", () => {
-  sendChat().catch((error) => showToast(error.message, true));
-});
-elements.generateWhatsAppQR.addEventListener("click", () => {
-  triggerWhatsAppConnection("generate").catch((error) => showToast(error.message, true));
-});
-elements.connectWhatsApp.addEventListener("click", () => {
-  triggerWhatsAppConnection("connect").catch((error) => showToast(error.message, true));
-});
-elements.renewWhatsAppQR.addEventListener("click", () => {
-  triggerWhatsAppConnection("renew").catch((error) => showToast(error.message, true));
-});
-elements.copyWhatsAppStatus.addEventListener("click", copyWhatsAppStatus);
-elements.whatsappPhoneInput.addEventListener("input", handlePhoneInput);
-elements.chatMessage.addEventListener("keydown", handleChatKeyDown);
+function init() {
+  document.getElementById("save-token").addEventListener("click", () => {
+    saveToken().catch((error) => showToast(error.message, true));
+  });
+  document.getElementById("ingest-content").addEventListener("click", () => {
+    ingestContent().catch((error) => showToast(error.message, true));
+  });
+  elements.sendChat.addEventListener("click", () => {
+    sendChat().catch((error) => showToast(error.message, true));
+  });
+  elements.generateWhatsAppQR.addEventListener("click", () => {
+    triggerWhatsAppConnection("generate").catch((error) => showToast(error.message, true));
+  });
+  elements.connectWhatsApp.addEventListener("click", () => {
+    triggerWhatsAppConnection("connect").catch((error) => showToast(error.message, true));
+  });
+  elements.renewWhatsAppQR.addEventListener("click", () => {
+    triggerWhatsAppConnection("renew").catch((error) => showToast(error.message, true));
+  });
+  elements.copyWhatsAppStatus.addEventListener("click", copyWhatsAppStatus);
+  elements.whatsappPhoneInput.addEventListener("input", handlePhoneInput);
+  elements.chatMessage.addEventListener("keydown", handleChatKeyDown);
+  elements.themeToggle.addEventListener("click", toggleTheme);
+  elements.providerToggles.forEach((button) => {
+    button.addEventListener("click", () => setActiveProvider(button.dataset.provider));
+  });
 
-restorePhoneDraft();
-appendMessage(
-  "agent",
-  "Painel pronto. Configure o token, treine o conteúdo, conecte o WhatsApp e teste seu agente aqui."
-);
-refreshSummary();
-refreshHealth();
-refreshWhatsApp();
-updateChatComposer();
-setInterval(refreshHealth, 10000);
-setInterval(refreshWhatsApp, 12000);
-setInterval(renderWhatsAppPanel, 1000);
+  restorePhoneDraft();
+  applyTheme(loadTheme());
+  appendMessage(
+    "agent",
+    "Painel pronto. Escolha o provedor, treine o conteúdo, conecte o WhatsApp e teste seu agente aqui."
+  );
+  refreshSummary();
+  refreshHealth();
+  refreshWhatsApp();
+  updateChatComposer();
+  setInterval(refreshHealth, 10000);
+  setInterval(refreshWhatsApp, 12000);
+  setInterval(renderWhatsAppPanel, 1000);
+}
 
 async function request(url, options = {}) {
   const response = await fetch(url, {
@@ -95,9 +116,131 @@ async function request(url, options = {}) {
   return response.json();
 }
 
+function providerLabel(provider) {
+  return provider === "gemini" ? "Gemini" : "OpenAI";
+}
+
+function loadTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  } catch (error) {
+    console.debug("Não foi possível carregar o tema salvo.", error);
+    return "dark";
+  }
+}
+
+function persistTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (error) {
+    console.debug("Não foi possível persistir o tema.", error);
+  }
+}
+
+function applyTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  state.theme = nextTheme;
+  document.body.dataset.theme = nextTheme;
+  elements.themeSummary.textContent =
+    nextTheme === "light" ? "Light Blue Premium" : "Dark Blue Premium";
+  elements.themeToggle.textContent =
+    nextTheme === "light" ? "Alternar para modo escuro" : "Alternar para modo claro";
+}
+
+function toggleTheme() {
+  const nextTheme = state.theme === "light" ? "dark" : "light";
+  applyTheme(nextTheme);
+  persistTheme(nextTheme);
+}
+
+function setActiveProvider(provider) {
+  state.activeProvider = provider === "gemini" ? "gemini" : "openai";
+  elements.providerToggles.forEach((button) => {
+    const isActive = button.dataset.provider === state.activeProvider;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  renderProviderSummary();
+}
+
+function currentRuntimePayload() {
+  return {
+    provider: state.activeProvider,
+    openai_api_key: elements.tokenInput.value.trim() || undefined,
+    openai_model: elements.openaiModel.value,
+    gemini_api_key: elements.geminiTokenInput.value.trim() || undefined,
+    gemini_model: elements.geminiModel.value,
+  };
+}
+
 function currentToken() {
-  const token = elements.tokenInput.value.trim();
-  return token || null;
+  const payload = currentRuntimePayload();
+  return payload[`${state.activeProvider}_api_key`] || null;
+}
+
+function formatProviderState(providerSummary, provider) {
+  if (!providerSummary?.configured) {
+    return {
+      pill: "Não configurado",
+      hint: `Salve uma chave para usar ${providerLabel(provider)} no servidor com exibição mascarada.`,
+    };
+  }
+
+  return {
+    pill: "Configurado",
+    hint: `Chave salva com segurança: ${providerSummary.masked_key} · Modelo ${providerSummary.model}.`,
+  };
+}
+
+function renderProviderSummary() {
+  const summary = state.summary;
+  const activeLabel = providerLabel(state.activeProvider);
+
+  if (!summary) {
+    elements.tokenSource.textContent = `${activeLabel} ativo`;
+    return;
+  }
+
+  const configuredCount = [summary.openai.configured, summary.gemini.configured].filter(Boolean).length;
+  const activeConfigured = summary[state.activeProvider]?.configured;
+  elements.tokenSource.textContent = activeConfigured
+    ? `${activeLabel} ativo · ${configuredCount} provedor(es) salvo(s)`
+    : `${activeLabel} ativo · aguardando chave`;
+
+  const openaiState = formatProviderState(summary.openai, "openai");
+  const geminiState = formatProviderState(summary.gemini, "gemini");
+
+  elements.openaiProviderState.textContent = openaiState.pill;
+  elements.openaiProviderHint.textContent = openaiState.hint;
+  elements.geminiProviderState.textContent = geminiState.pill;
+  elements.geminiProviderHint.textContent = geminiState.hint;
+}
+
+function syncProviderModels(summary) {
+  if (summary?.openai?.model) {
+    ensureModelOption(elements.openaiModel, summary.openai.model);
+    elements.openaiModel.value = summary.openai.model;
+  }
+  if (summary?.gemini?.model) {
+    ensureModelOption(elements.geminiModel, summary.gemini.model);
+    elements.geminiModel.value = summary.gemini.model;
+  }
+}
+
+function ensureModelOption(select, value) {
+  if (!value || Array.from(select.options).some((option) => option.value === value)) {
+    return;
+  }
+
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = value;
+  select.appendChild(option);
+}
+
+function clearSecretInputs() {
+  elements.tokenInput.value = "";
+  elements.geminiTokenInput.value = "";
 }
 
 function digitsOnly(value) {
@@ -338,9 +481,9 @@ function handleChatKeyDown(event) {
 async function refreshSummary() {
   try {
     const summary = await request(`${apiBase}/settings`, { method: "GET" });
-    elements.tokenSource.textContent = summary.has_server_token
-      ? "Token salvo no servidor"
-      : "Sem token salvo";
+    state.summary = summary;
+    syncProviderModels(summary);
+    setActiveProvider(summary.active_provider);
   } catch (error) {
     showToast(error.message, true);
   }
@@ -361,19 +504,29 @@ async function refreshHealth() {
 }
 
 async function saveToken() {
-  const token = currentToken();
-  if (!token) {
-    showToast("Informe um token OpenAI para salvar.", true);
+  const payload = currentRuntimePayload();
+  const hasNewKey = Boolean(payload.openai_api_key || payload.gemini_api_key);
+  const hasSavedKey = Boolean(state.summary?.openai?.configured || state.summary?.gemini?.configured);
+
+  if (!hasNewKey && !hasSavedKey) {
+    showToast("Informe ao menos uma API key OpenAI ou Gemini para salvar.", true);
     return;
   }
 
   await request(`${apiBase}/config/token`, {
     method: "POST",
-    body: JSON.stringify({ openai_api_key: token }),
+    body: JSON.stringify({
+      active_provider: state.activeProvider,
+      openai_api_key: payload.openai_api_key,
+      openai_model: payload.openai_model,
+      gemini_api_key: payload.gemini_api_key,
+      gemini_model: payload.gemini_model,
+    }),
   });
 
-  elements.tokenSource.textContent = "Token salvo no servidor";
-  showToast("Token salvo no backend.");
+  clearSecretInputs();
+  await refreshSummary();
+  showToast(`Configuração salva no backend. ${providerLabel(state.activeProvider)} está ativo.`);
 }
 
 async function ingestContent() {
@@ -389,7 +542,7 @@ async function ingestContent() {
     chunk_strategy: elements.chunkStrategy.value,
     chunk_size: Number(elements.chunkSize.value),
     chunk_overlap: Number(elements.chunkOverlap.value),
-    openai_api_key: currentToken(),
+    ...currentRuntimePayload(),
   };
 
   const response = await request(`${apiBase}/ingest`, {
@@ -422,8 +575,8 @@ async function sendChat() {
       body: JSON.stringify({
         message,
         conversation_id: conversationId,
-        openai_api_key: currentToken(),
         use_rag: true,
+        ...currentRuntimePayload(),
       }),
     });
 
@@ -500,3 +653,5 @@ function showToast(message, isError = false) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => elements.toast.classList.remove("show"), 2600);
 }
+
+init();

@@ -2,6 +2,13 @@
 
 Aplicação full stack para operar um agente com RAG e integração com WhatsApp Web.
 
+O painel agora suporta:
+
+- configuração de OpenAI e Gemini no mesmo fluxo
+- seleção de provedor ativo e modelo por provedor
+- fallback seguro para credenciais salvas no servidor
+- alternância entre tema escuro e claro no frontend
+
 O projeto foi preparado para repositório público e uso em produção:
 
 - sem credenciais reais versionadas
@@ -46,6 +53,14 @@ Preencha principalmente:
 - `CORS_ORIGINS`
 - `POSTGRES_PASSWORD`
 - `MEUAGENTE_WHATSAPP_VERIFY_TOKEN`
+
+Opcionalmente, ajuste também:
+
+- `MEUAGENTE_DEFAULT_PROVIDER`
+- `MEUAGENTE_LLM_MODEL`
+- `MEUAGENTE_GEMINI_LLM_MODEL`
+- `MEUAGENTE_EMBEDDER_MODEL`
+- `MEUAGENTE_GEMINI_EMBEDDER_MODEL`
 
 Nunca versione `.env`, `.env.production` ou qualquer arquivo real de segredo.
 
@@ -104,6 +119,14 @@ Backend:
 - `POST /api/ingest`
 - `POST /api/chat`
 - `POST /api/whatsapp/inbound`
+
+`/api/config/token` aceita configuração dos dois provedores e do provedor ativo:
+
+- `active_provider`
+- `openai_api_key`
+- `openai_model`
+- `gemini_api_key`
+- `gemini_model`
 
 WhatsApp:
 

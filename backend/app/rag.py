@@ -16,32 +16,65 @@ class RagService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
-    def _vector_db(self, api_key: str) -> PgVector:
-        return PgVector(
-            table_name=self.settings.vector_table,
-            db_url=self.settings.postgres_dsn,
-            search_type=getattr(SearchType, self.settings.rag_search_type, SearchType.hybrid),
-            embedder=OpenAIEmbedder(
-                id=self.settings.embedder_model,
+    def _embedder(self, provider: str, api_key: str):
+        if provider == "gemini":
+            from agno.embedder.google import GeminiEmbedder
+
+            return GeminiEmbedder(
+                id=self.settings.gemini_embedder_model,
                 api_key=api_key,
-            ),
+            )
+
+        return OpenAIEmbedder(
+            id=self.settings.embedder_model,
+            api_key=api_key,
         )
 
-    def _knowledge(self, api_key: str, path: str | None = None, reader: TextReader | None = None) -> TextKnowledgeBase:
+    def _model(self, provider: str, api_key: str, model_id: str):
+        if provider == "gemini":
+            from agno.models.google import Gemini
+
+            return Gemini(
+                id=model_id,
+                api_key=api_key,
+            )
+
+        return OpenAIResponses(
+            id=model_id,
+            api_key=api_key,
+        )
+
+    def _table_name(self, provider: str) -> str:
+        if provider == "gemini":
+            return f"{self.settings.vector_table}_gemini"
+        return self.settings.vector_table
+
+    def _vector_db(self, api_key: str, provider: str) -> PgVector:
+        return PgVector(
+            table_name=self._table_name(provider),
+            db_url=self.settings.postgres_dsn,
+            search_type=getattr(SearchType, self.settings.rag_search_type, SearchType.hybrid),
+            embedder=self._embedder(provider=provider, api_key=api_key),
+        )
+
+    def _knowledge(
+        self,
+        api_key: str,
+        provider: str,
+        path: str | None = None,
+        reader: TextReader | None = None,
+    ) -> TextKnowledgeBase:
         return TextKnowledgeBase(
-            vector_db=self._vector_db(api_key=api_key),
+            vector_db=self._vector_db(api_key=api_key, provider=provider),
             reader=reader or TextReader(chunk_size=self.settings.default_chunk_size),
             num_documents=self.settings.knowledge_max_results,
             path=path,
         )
 
-    def _agent(self, api_key: str, use_rag: bool) -> Agent:
+    def _agent(self, api_key: str, provider: str, model_id: str, use_rag: bool) -> Agent:
         return Agent(
-            model=OpenAIResponses(
-                id=self.settings.llm_model,
-                api_key=api_key,
-            ),
-            knowledge=self._knowledge(api_key=api_key),
+            model=self._model(provider=provider, api_key=api_key, model_id=model_id),
+            knowledge=self._knowledge(api_key=api_key, provider=provider),
             search_knowledge=use_rag,
             add_knowledge_to_context=use_rag,
             markdown=True,
@@ -68,6 +101,7 @@ class RagService:
         self,
         api_key: str,
         *,
+        provider: str,
         content: str,
         name: str,
         chunk_strategy: str,
@@ -85,6 +119,7 @@ class RagService:
         )
         knowledge = self._knowledge(
             api_key=api_key,
+            provider=provider,
             path=str(stored_path),
             reader=reader,
         )
@@ -95,11 +130,18 @@ class RagService:
         self,
         api_key: str,
         *,
+        provider: str,
+        model_id: str,
         message: str,
         conversation_id: str,
         use_rag: bool,
     ) -> str:
-        agent = self._agent(api_key=api_key, use_rag=use_rag)
+        agent = self._agent(
+            api_key=api_key,
+            provider=provider,
+            model_id=model_id,
+            use_rag=use_rag,
+        )
         response = agent.run(
             message,
             session_id=conversation_id,

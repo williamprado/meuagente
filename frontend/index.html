@@ -42,13 +42,17 @@
           <div class="hero-summary">
             <div class="summary-chip">
               <span class="summary-label">Tema</span>
-              <strong>Dark Blue Premium</strong>
+              <strong id="theme-summary">Dark Blue Premium</strong>
             </div>
             <div class="summary-chip">
               <span class="summary-label">Fluxo</span>
               <strong>4 passos guiados</strong>
             </div>
           </div>
+
+          <button id="theme-toggle" class="ghost theme-toggle" type="button">
+            Alternar para modo claro
+          </button>
         </div>
       </header>
 
@@ -167,20 +171,106 @@
               <span class="section-kicker">Passo 1 · Configurar</span>
               <h2>Configurar</h2>
               <p class="card-copy">
-                Centralize a credencial do modelo para manter o agente pronto para
-                treino, conversa e WhatsApp com fallback no servidor.
+                Mantenha OpenAI e Gemini prontos para uso, escolha o provedor
+                ativo e deixe as chaves seguras no backend com modelos definidos.
               </p>
             </div>
-            <span id="token-source" class="pill">Sem token salvo</span>
+            <span id="token-source" class="pill">Configuração pendente</span>
           </div>
 
-          <label class="field">
-            <span>Token OpenAI</span>
-            <input id="openai-token" type="password" placeholder="sk-..." />
-          </label>
-          <button id="save-token" class="primary">Salvar token no servidor</button>
+          <div class="provider-switch" role="tablist" aria-label="Provedor ativo">
+            <button
+              type="button"
+              id="provider-openai"
+              class="provider-toggle is-active"
+              data-provider="openai"
+              aria-pressed="true"
+            >
+              OpenAI ativo
+            </button>
+            <button
+              type="button"
+              id="provider-gemini"
+              class="provider-toggle"
+              data-provider="gemini"
+              aria-pressed="false"
+            >
+              Gemini ativo
+            </button>
+          </div>
+
+          <p class="hint provider-switch-hint">
+            O provedor ativo é usado no treino, na conversa e no WhatsApp quando
+            não houver uma chave temporária no navegador.
+          </p>
+
+          <div class="provider-grid">
+            <div class="subcard provider-card">
+              <div class="provider-card-head">
+                <div>
+                  <span class="mini-kicker">OpenAI</span>
+                  <h3>Configuração OpenAI</h3>
+                </div>
+                <span id="openai-provider-state" class="pill provider-pill">Não configurado</span>
+              </div>
+
+              <label class="field">
+                <span>API key OpenAI</span>
+                <input id="openai-token" type="password" placeholder="sk-..." autocomplete="off" />
+              </label>
+
+              <label class="field">
+                <span>Modelo OpenAI</span>
+                <select id="openai-model">
+                  <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                  <option value="gpt-4.1">gpt-4.1</option>
+                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+              </label>
+
+              <p id="openai-provider-hint" class="hint">
+                Salve uma chave para usar OpenAI no servidor com exibição mascarada.
+              </p>
+            </div>
+
+            <div class="subcard provider-card">
+              <div class="provider-card-head">
+                <div>
+                  <span class="mini-kicker">Google Gemini</span>
+                  <h3>Configuração Gemini</h3>
+                </div>
+                <span id="gemini-provider-state" class="pill provider-pill">Não configurado</span>
+              </div>
+
+              <label class="field">
+                <span>API key Gemini</span>
+                <input
+                  id="gemini-token"
+                  type="password"
+                  placeholder="AIza..."
+                  autocomplete="off"
+                />
+              </label>
+
+              <label class="field">
+                <span>Modelo Gemini</span>
+                <select id="gemini-model">
+                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                  <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+                  <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                </select>
+              </label>
+
+              <p id="gemini-provider-hint" class="hint">
+                Salve uma chave para usar Gemini no servidor com modelo dedicado.
+              </p>
+            </div>
+          </div>
+
+          <button id="save-token" class="primary">Salvar configuração dos provedores</button>
           <p class="hint">
-            Se o navegador não enviar token, o backend usa o token salvo no servidor.
+            Após salvar, as chaves continuam ocultas no painel. O backend usa o
+            provedor e o modelo ativos salvos no servidor como fallback.
           </p>
         </section>
 

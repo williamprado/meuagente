@@ -51,6 +51,39 @@ body {
     radial-gradient(circle at 82% 12%, rgba(62, 140, 255, 0.18), transparent 22%),
     radial-gradient(circle at bottom center, rgba(25, 87, 208, 0.12), transparent 30%),
     linear-gradient(180deg, #08111f 0%, #040914 100%);
+  transition:
+    background var(--transition-medium),
+    color var(--transition-medium);
+}
+
+body[data-theme="light"] {
+  --bg: #eef4ff;
+  --bg-deep: #dde7f7;
+  --bg-elevated: #ffffff;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-2: rgba(247, 250, 255, 0.94);
+  --surface-3: rgba(238, 245, 255, 0.98);
+  --surface-soft: rgba(59, 122, 255, 0.08);
+  --card: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(240, 246, 255, 0.96));
+  --card-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(233, 241, 255, 0.98));
+  --line: rgba(71, 114, 193, 0.14);
+  --line-strong: rgba(71, 114, 193, 0.24);
+  --text: #10203a;
+  --text-soft: #183156;
+  --muted: #5c6f91;
+  --muted-2: #7f8fad;
+  --accent: #4e8cff;
+  --accent-strong: #2563eb;
+  --accent-soft: rgba(78, 140, 255, 0.12);
+  --accent-glow: rgba(37, 99, 235, 0.2);
+  --shadow-lg: 0 26px 70px rgba(73, 109, 171, 0.18);
+  --shadow-md: 0 18px 42px rgba(80, 110, 170, 0.14);
+  --shadow-sm: 0 12px 28px rgba(92, 121, 177, 0.12);
+  background:
+    radial-gradient(circle at top left, rgba(82, 133, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 82% 12%, rgba(102, 174, 255, 0.12), transparent 22%),
+    radial-gradient(circle at bottom center, rgba(87, 143, 255, 0.1), transparent 30%),
+    linear-gradient(180deg, #f5f8ff 0%, #e8f0fb 100%);
 }
 
 button,
@@ -120,6 +153,20 @@ button:disabled {
   background: rgba(10, 208, 255, 0.12);
 }
 
+body[data-theme="light"] .app-grid {
+  background-image:
+    linear-gradient(rgba(71, 114, 193, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71, 114, 193, 0.08) 1px, transparent 1px);
+}
+
+body[data-theme="light"] .app-glow-left {
+  background: rgba(78, 140, 255, 0.18);
+}
+
+body[data-theme="light"] .app-glow-right {
+  background: rgba(0, 169, 255, 0.12);
+}
+
 .page-shell {
   position: relative;
   z-index: 1;
@@ -134,6 +181,10 @@ button:disabled {
 .subcard {
   border: 1px solid var(--line);
   box-shadow: var(--shadow-md);
+  transition:
+    background var(--transition-medium),
+    border-color var(--transition-medium),
+    box-shadow var(--transition-medium);
 }
 
 .card-shell {
@@ -167,6 +218,12 @@ button:disabled {
     radial-gradient(circle at top left, rgba(78, 136, 255, 0.16), transparent 26%),
     linear-gradient(90deg, rgba(83, 124, 255, 0.08), rgba(6, 13, 25, 0) 48%);
   pointer-events: none;
+}
+
+body[data-theme="light"] .hero::before {
+  background:
+    radial-gradient(circle at top left, rgba(78, 136, 255, 0.14), transparent 28%),
+    linear-gradient(90deg, rgba(83, 124, 255, 0.08), rgba(255, 255, 255, 0) 52%);
 }
 
 .hero-copy,
@@ -233,6 +290,10 @@ button:disabled {
   flex-direction: column;
   gap: 16px;
   justify-content: space-between;
+}
+
+.theme-toggle {
+  align-self: flex-end;
 }
 
 .hero-badge {
@@ -391,6 +452,35 @@ button:disabled {
   height: 32px;
 }
 
+body[data-theme="light"] .eyebrow,
+body[data-theme="light"] .section-kicker {
+  color: #1a4381;
+  background: rgba(98, 139, 255, 0.1);
+  border-color: rgba(105, 167, 255, 0.18);
+}
+
+body[data-theme="light"] .mini-kicker {
+  background: rgba(27, 79, 166, 0.06);
+  border-color: rgba(27, 79, 166, 0.08);
+}
+
+body[data-theme="light"] .card-gradient {
+  background:
+    radial-gradient(circle at top left, rgba(61, 125, 255, 0.12), transparent 22%),
+    linear-gradient(90deg, rgba(77, 120, 255, 0.08), rgba(255, 255, 255, 0) 45%);
+}
+
+body[data-theme="light"] .card-noise {
+  opacity: 0.08;
+}
+
+body[data-theme="light"] .whatsapp-icon {
+  background:
+    linear-gradient(180deg, rgba(37, 211, 102, 0.18), rgba(146, 241, 186, 0.2)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
 .step-indicator {
   display: flex;
   flex-wrap: wrap;
@@ -516,6 +606,65 @@ button:disabled {
   gap: 12px;
 }
 
+.provider-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.provider-switch-hint {
+  margin-bottom: 18px;
+}
+
+.provider-toggle {
+  color: var(--text-soft);
+  border: 1px solid rgba(118, 153, 230, 0.18);
+  background:
+    linear-gradient(180deg, rgba(25, 41, 67, 0.86), rgba(12, 22, 40, 0.92)),
+    rgba(12, 22, 40, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.provider-toggle.is-active {
+  color: #f8fbff;
+  background:
+    linear-gradient(180deg, #62a7ff 0%, #357dff 48%, #225ee7 100%);
+  border-color: rgba(105, 167, 255, 0.34);
+  box-shadow:
+    0 16px 30px rgba(31, 92, 233, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.provider-card {
+  padding: 20px;
+}
+
+.provider-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.provider-card h3 {
+  margin: 8px 0 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.provider-pill {
+  flex-shrink: 0;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -548,6 +697,15 @@ button:disabled {
     background var(--transition-fast);
 }
 
+body[data-theme="light"] .field input,
+body[data-theme="light"] .field textarea,
+body[data-theme="light"] .field select {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 255, 0.98)),
+    rgba(255, 255, 255, 0.98);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 .field input::placeholder,
 .field textarea::placeholder {
   color: var(--muted-2);
@@ -569,6 +727,17 @@ button:disabled {
   background:
     linear-gradient(180deg, rgba(15, 27, 50, 0.98), rgba(9, 19, 36, 0.98)),
     rgba(9, 19, 36, 0.98);
+}
+
+body[data-theme="light"] .field input:focus,
+body[data-theme="light"] .field textarea:focus,
+body[data-theme="light"] .field select:focus {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(241, 247, 255, 1)),
+    rgba(255, 255, 255, 1);
+  box-shadow:
+    0 0 0 4px rgba(53, 125, 255, 0.1),
+    0 12px 28px rgba(90, 118, 167, 0.16);
 }
 
 .field textarea {
@@ -657,6 +826,28 @@ button:active:not(:disabled) {
   font-weight: 700;
 }
 
+body[data-theme="light"] .provider-toggle,
+body[data-theme="light"] .secondary,
+body[data-theme="light"] .ghost,
+body[data-theme="light"] .small-button {
+  color: var(--text-soft);
+  border-color: rgba(71, 114, 193, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 246, 255, 0.98)),
+    rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+body[data-theme="light"] .provider-toggle:hover:not(:disabled),
+body[data-theme="light"] .secondary:hover:not(:disabled),
+body[data-theme="light"] .ghost:hover:not(:disabled),
+body[data-theme="light"] .small-button:hover:not(:disabled) {
+  border-color: rgba(71, 114, 193, 0.26);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(235, 243, 255, 1)),
+    rgba(255, 255, 255, 1);
+}
+
 .is-hidden {
   display: none;
 }
@@ -673,6 +864,10 @@ button:active:not(:disabled) {
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+body[data-theme="light"] .pill {
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .status-badge {
@@ -722,6 +917,32 @@ button:active:not(:disabled) {
     linear-gradient(180deg, rgba(12, 25, 45, 0.96), rgba(6, 13, 24, 0.98)),
     rgba(6, 13, 24, 0.98);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body[data-theme="light"] .status-panel,
+body[data-theme="light"] .detail-card,
+body[data-theme="light"] .qr-box,
+body[data-theme="light"] .chat-window,
+body[data-theme="light"] .chat-bubble.agent,
+body[data-theme="light"] .toast,
+body[data-theme="light"] .hero-badge,
+body[data-theme="light"] .summary-chip,
+body[data-theme="light"] .subcard {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 246, 255, 0.98)),
+    rgba(255, 255, 255, 0.96);
+}
+
+body[data-theme="light"] .step-chip {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(71, 114, 193, 0.12);
+}
+
+body[data-theme="light"] .step-chip-active {
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(65, 124, 255, 0.18), rgba(109, 157, 255, 0.2));
+  border-color: rgba(65, 124, 255, 0.24);
 }
 
 .qr-box-large {
@@ -907,6 +1128,7 @@ button:active:not(:disabled) {
   .hero-summary,
   .detail-grid,
   .inline-fields,
+  .provider-grid,
   .chat-composer {
     grid-template-columns: 1fr;
   }
@@ -928,6 +1150,10 @@ button:active:not(:disabled) {
   }
 
   .chat-send {
+    width: 100%;
+  }
+
+  .theme-toggle {
     width: 100%;
   }
 }
