@@ -47,6 +47,16 @@ def mask_key(value: str | None) -> str | None:
     return f"{value[:4]}...{value[-4:]}"
 
 
+def describe_provider_error(action: str, exc: Exception, *, provider: str, model: str) -> str:
+    message = str(exc).strip() or exc.__class__.__name__
+    if provider == "gemini" and ("404 Not Found" in message or "404 NOT_FOUND" in message):
+        return (
+            f"Falha no {action} com Gemini: o modelo '{model}' nao esta disponivel para esta conta. "
+            f"Use '{settings.gemini_llm_model}'."
+        )
+    return f"Falha no {action}: {message}"
+
+
 @app.get(f"{settings.api_prefix}/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     try:
@@ -162,7 +172,15 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Falha no chat: {exc}") from exc
+        raise HTTPException(
+            status_code=500,
+            detail=describe_provider_error(
+                "chat",
+                exc,
+                provider=resolved.provider,
+                model=resolved.model,
+            ),
+        ) from exc
     return ChatResponse(
         answer=answer,
         conversation_id=conversation_id,
@@ -194,6 +212,11 @@ async def whatsapp_inbound(request: WhatsAppInboundRequest) -> dict[str, str]:
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=f"Falha no processamento do WhatsApp: {exc}",
+            detail=describe_provider_error(
+                "processamento do WhatsApp",
+                exc,
+                provider=resolved.provider,
+                model=resolved.model,
+            ),
         ) from exc
     return {"reply": answer, "conversation_id": conversation_id}

@@ -18,7 +18,7 @@ class TokenConfigRequest(BaseModel):
     openai_api_key: str | None = Field(default=None, min_length=20)
     openai_model: str = Field(default="gpt-4.1-mini", min_length=1)
     gemini_api_key: str | None = Field(default=None, min_length=20)
-    gemini_model: str = Field(default="gemini-2.0-flash", min_length=1)
+    gemini_model: str = Field(default="gemini-2.5-flash", min_length=1)
 
 
 class TokenConfigResponse(BaseModel):
